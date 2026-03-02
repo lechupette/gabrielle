@@ -16,29 +16,32 @@
 
         /* HUECO PARA MIRAR DIBUJO */
         #mask {
-            /* Ajuste automático para que quepa en el celu */
-            max-width: 100vw;
-            max-height: calc(100vw * (640/1048));
+            /* RECORTE: 1048x640 para que la linea blanca quede afuera */
             width: 1048px; 
             height: 640px; 
             overflow: hidden;
             position: relative;
             border: 2px solid #111;
             background-color: #000;
-            touch-action: none; /* Evita que el celu haga scroll al tocar */
+            /* Soporte para que se achique en el celu */
+            transform-origin: center;
         }
 
         /* DIBUJO QUE SE MUEVE ATRAS */
         #sprite-layer {
             position: absolute;
+            /* LINK DE LA COSA JPEG QUE ME DA IMGUR */
             background-image: url('https://i.imgur.com/GN17nyJ.jpeg');
             background-repeat: no-repeat;
-            background-size: 700% 600%; /* Proporción basada en 7x6 frames */
-            width: 700%; 
-            height: 600%;
+            
+            /* TAMAÑO DE TODA LA PORQUERÍA (X3) */
+            background-size: 7350px 3852px; 
+            width: 7350px;
+            height: 3852px;
+            
             image-rendering: crisp-edges;
-            left: -0.1%; 
-            top: -0.1%;
+            /* EMPUJE: Metemos el dibujo 1px adentro de la mascara */
+            left: -1px; top: -1px;
             will-change: transform;
         }
     </style>
@@ -50,98 +53,55 @@
     </div>
 
     <script>
+        const mask = document.getElementById('mask');
         const layer = document.getElementById('sprite-layer');
+        /* MUCHAS GABIS */
         const TOTAL_FRAMES = 39;
+        /* FILAS  */
         const COLS = 7;
+        /* MEDIDAS  */
+        const FW = 1050; 
+        const FH = 642; 
 
-        /* FUNCION MAESTRA PARA MOVER */
-        function actualizarGabi(clientX) {
+        /* 1. AUTO-ESCALADO PARA MÓVIL */
+        function ajustarEscala() {
+            const scale = (window.innerWidth * 0.95) / 1050;
+            if (scale < 1) {
+                mask.style.transform = `scale(${scale})`;
+            } else {
+                mask.style.transform = `scale(1)`;
+            }
+        }
+        window.addEventListener('resize', ajustarEscala);
+        ajustarEscala();
+
+        /* 2. FUNCIÓN DE MOVIMIENTO UNIFICADA */
+        function moverGabi(clientX) {
             const percent = clientX / window.innerWidth;
             const frameIndex = Math.floor(percent * (TOTAL_FRAMES - 1));
             
             const col = frameIndex % COLS;
             const row = Math.floor(frameIndex / COLS);
             
-            // Usamos porcentajes para que funcione en cualquier tamaño de pantalla
-            const x = col * (100 / COLS);
-            const y = row * (100 / 6); // 6 filas totales
+            const x = col * FW;
+            const y = row * FH;
             
-            layer.style.transform = `translate(-${x}%, -${y}%)`;
+            /* MOVER PARA QUE NO SE VEA MUESCA FEA DE ABAJO */
+            layer.style.transform = `translate(-${x}px, -${y}px)`;
         }
 
         /* CUANDO MOVER MANO CON RATON */
-        window.addEventListener('mousemove', (e) => {
-            actualizarGabi(e.clientX);
-        });
+        window.addEventListener('mousemove', (e) => moverGabi(e.clientX));
 
-        /* CUANDO MOVER DEDO EN EL CELU */
+        /* SOPORTE PARA DEDO (CELULAR) */
+        window.addEventListener('touchstart', (e) => moverGabi(e.touches[0].clientX), { passive: false });
         window.addEventListener('touchmove', (e) => {
-            actualizarGabi(e.touches[0].clientX);
+            e.preventDefault(); // Bloquea el scroll para que Gabi deslice
+            moverGabi(e.touches[0].clientX);
         }, { passive: false });
 
-        /* Te vas a acordar de mí...
-                                      .____.
-           xuu$``$$$uuu.
-         . $``$  $$$`$$$
-        dP*$  $  $$$ $$$
-        ?k $  $  $$$ $$$
-         $ $  $  $$$ $$$
-         ":$  $  $$$ $$$
-          N$  $  $$$ $$$
-          $$  $  $$$ $$$
-           $  $  $$$ $$$
-           $  $  $$$ $$$
-           $  $  $$$ $$$
-           $  $  $$$ $$$
-           $  $  $$$ $$$
-           $$#$  $$$ $$$
-           $$'$  $$$ $$$
-           $$`R  $$$ $$$
-           $$$&  $$$ $$$
-           $#*$  $$$ $$$
-           $  $  $$$ @$$
-           $  $  $$$ $$$
-           $  $  $$$ $$$
-           $  $  $B$ $$&.
-           $  $  $D$ $$$$$muL.
-           $  $  $Q$ $$$$$  `"**mu..
-           $  $  $R$ $$$$$    k  `$$*t
-           $  @  $$$ $$$$$    k   $$!4
-           $ x$uu@B8u$NB@$uuuu6...$$X?
-           $ $(`RF`$`````R$ $$5`"""#"R
-           $ $" M$ $     $$ $$$      ?
-           $ $  ?$ $     T$ $$$      $
-           $ $F H$ $     M$ $$K      $  ..
-           $ $L $$$ $$$$R.     "d$$$$Ns.
-           $ $~ $$$     N$$$X      ."    "%2h
-           $ 4k f  $     *$ $$&      R       "iN
-           $ $$ %uz!     tuuR$$:     Buu      ?`:
-           $ $F          $??$8B      | '*Ned*$~L$
-           $ $k          $'@$$$      |$.suu+!' !$
-           $ ?N          $'$$@$      $*`      d:"
-           $ dL..........M.$&$$      5       d"P
-         ..$.^"*I$RR*$C""??77*?      "nu...n*L*
-        '$C"R   ``""!$*@#""` .uor    bu8BUU+!`
-        '*@m@.       *d"     *$Rouxxd"```$
-             R*@mu.           "#$R *$    !
-             *%x. "*L               $     %.
-                "N  `%.      ...u.d!` ..ue$$$o..
-                 @    ".    $*"""" .u$$$$$$$$$$$$beu...
-                8  .mL %  :R`     x$$$$$$$$$$$$$$$$$$$$$$$$$$WmeemeeWc
-               |$e!" "s:k 4      d$N"`"#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$>
-               $$      "N @      $?$    F$$$$$$$$$$$$$$$$$$$$$$$$$$$$>
-               $@       ^%Uu..   R#8buu$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$>
-                          ```""*u$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$>
-                                 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$>
-                                  "5$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$>
-                                    `*$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$>
-                                      ^#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$>
-                                         "*$$$$$$$$$$$$$$$$$$$$$$$$$$>
-                                           `"*$$$$$$$$$$$$$$$$$$$$$$$>
-                                               ^!$$$$$$$$$$$$$$$$$$$$>
-                                                   `"#+$$$$$$$$$$$$$$>
-                                                         ""**$$$$$$$$>
-                                                                ```""
+        /* Te vas a acordar de mí
+        (Aquí va tu arte ASCII del beso que ya tenés)
         */
     </script>
 </body>
